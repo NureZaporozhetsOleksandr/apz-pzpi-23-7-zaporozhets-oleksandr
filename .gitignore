@@ -1,0 +1,29 @@
+# Android / Gradle
+.gradle/
+build/
+app/build/
+*/build/
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+
+# Kotlin / Java
+*.class
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
