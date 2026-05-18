@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkTime Monitor Web</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar hidden" id="sidebar">
+        <div>
+            <div class="brand">
+                <div class="brand-icon">WT</div>
+                <div>
+                    <h2>WorkTime</h2>
+                    <p>Monitor</p>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <button type="button" class="nav-btn active" data-page="dashboard" data-i18n="navDashboard">Головна</button>
+                <button type="button" class="nav-btn" data-page="history" data-i18n="navHistory">Історія</button>
+                <button type="button" class="nav-btn" data-page="statistics" data-i18n="navStatistics">Статистика</button>
+                <button type="button" class="nav-btn" data-page="absences" data-i18n="navAbsences">Відсутності</button>
+                <button type="button" class="nav-btn" data-page="schedule" data-i18n="navSchedule">Графік</button>
+                <button type="button" class="nav-btn admin-only hidden" data-page="admin" data-i18n="navAdmin">Адмін</button>
+                <button type="button" class="nav-btn" data-page="backup" data-i18n="navBackup">Backup</button>
+                <button type="button" class="nav-btn" data-page="profile" data-i18n="navProfile">Профіль</button>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <button type="button" id="langBtn" class="secondary-btn">EN</button>
+            <button type="button" id="logoutBtn" class="danger-btn" data-i18n="logout">Вийти</button>
+        </div>
+    </aside>
+
+    <main class="main">
+        <section id="loginPage" class="login-page">
+            <div class="login-card">
+                <div class="login-logo">WT</div>
+                <h1>WorkTime Monitor</h1>
+                <p data-i18n="loginSubtitle">Web-клієнт системи обліку робочого часу</p>
+
+                <label for="loginInput" data-i18n="loginLabel">Логін</label>
+                <input id="loginInput" type="text" value="admin" placeholder="admin" autocomplete="username">
+
+                <label for="passwordInput" data-i18n="passwordLabel">Пароль</label>
+                <input id="passwordInput" type="password" value="123" placeholder="123" autocomplete="current-password">
+
+                <button type="button" id="loginBtn" class="primary-btn" data-i18n="loginBtn">Увійти</button>
+                <p id="loginError" class="error-text"></p>
+            </div>
+        </section>
+
+        <section id="contentPage" class="content-page hidden">
+            <header class="topbar">
+                <div>
+                    <h1 id="pageTitle">Головна</h1>
+                    <p id="pageSubtitle">Система моніторингу робочого часу</p>
+                </div>
+                <div class="user-chip">
+                    <span id="userName">User</span>
+                    <span id="userRole">Employee</span>
+                </div>
+            </header>
+
+            <section id="dashboardPage" class="page active-page">
+                <div class="hero-card">
+                    <div>
+                        <span class="eyebrow" data-i18n="dashboardEyebrow">Поточна сесія</span>
+                        <h2 id="workStatus">Робочий день не розпочато</h2>
+                        <p id="dashboardHint" data-i18n="dashboardHint">Використовуйте кнопки нижче, щоб фіксувати робочі події.</p>
+                    </div>
+                    <div class="status-badge" id="statusBadge">Idle</div>
+                </div>
+
+                <div class="quick-actions">
+                    <button type="button" id="startWorkBtn" class="action-card success">
+                        <span data-i18n="startWork">Почати робочий день</span>
+                        <small>StartWork</small>
+                    </button>
+                    <button type="button" id="startBreakBtn" class="action-card warning">
+                        <span data-i18n="startBreak">Почати перерву</span>
+                        <small>BreakStart</small>
+                    </button>
+                    <button type="button" id="endBreakBtn" class="action-card info">
+                        <span data-i18n="endBreak">Завершити перерву</span>
+                        <small>BreakEnd</small>
+                    </button>
+                    <button type="button" id="endWorkBtn" class="action-card danger">
+                        <span data-i18n="endWork">Завершити робочий день</span>
+                        <small>EndWork</small>
+                    </button>
+                </div>
+
+                <div class="grid three">
+                    <div class="card metric-card">
+                        <span data-i18n="todayWorked">Відпрацьовано сьогодні</span>
+                        <b id="todayWorkedValue">0 год 0 хв</b>
+                    </div>
+                    <div class="card metric-card">
+                        <span data-i18n="weekWorked">Відпрацьовано за тиждень</span>
+                        <b id="weekWorkedValue">0 год 0 хв</b>
+                    </div>
+                    <div class="card metric-card">
+                        <span data-i18n="timeRecords">Записи часу</span>
+                        <b id="localRecordCount">0</b>
+                    </div>
+                </div>
+            </section>
+
+            <section id="historyPage" class="page">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 data-i18n="historyTitle">Історія відміток</h3>
+                            <p data-i18n="historySubtitle">Список подій робочого часу користувача.</p>
+                        </div>
+                        <button type="button" id="loadHistoryBtn" class="secondary-btn" data-i18n="refresh">Оновити</button>
+                    </div>
+                    <div id="historyList" class="list"></div>
+                </div>
+            </section>
+
+            <section id="statisticsPage" class="page">
+                <div class="grid three">
+                    <div class="card metric-card">
+                        <span data-i18n="todayWorked">Відпрацьовано сьогодні</span>
+                        <b id="statsTodayWorkedValue">0 год 0 хв</b>
+                    </div>
+                    <div class="card metric-card">
+                        <span data-i18n="weekWorked">Відпрацьовано за тиждень</span>
+                        <b id="statsWeekWorkedValue">0 год 0 хв</b>
+                    </div>
+                    <div class="card metric-card">
+                        <span data-i18n="timeRecords">Записи часу</span>
+                        <b id="statsRecordCount">0</b>
+                    </div>
+                </div>
+                <div class="card mt">
+                    <div class="card-header">
+                        <div>
+                            <h3 data-i18n="dailyStats">Деталізація за днями</h3>
+                            <p data-i18n="dailyStatsSubtitle">План, факт, запізнення та відсутності.</p>
+                        </div>
+                        <button type="button" id="loadStatsBtn" class="secondary-btn" data-i18n="refresh">Оновити</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th data-i18n="date">Дата</th>
+                                <th data-i18n="planned">План</th>
+                                <th data-i18n="worked">Факт</th>
+                                <th data-i18n="late">Запізнення</th>
+                                <th data-i18n="absence">Відсутність</th>
+                            </tr>
+                            </thead>
+                            <tbody id="dailyStatsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="absencesPage" class="page">
+                <div class="grid two">
+                    <div class="card">
+                        <h3 data-i18n="createAbsence">Створити запис відсутності</h3>
+                        <label data-i18n="absenceType">Тип</label>
+                        <select id="absenceTypeInput">
+                            <option value="Vacation">Vacation</option>
+                            <option value="SickLeave">SickLeave</option>
+                            <option value="BusinessTrip">BusinessTrip</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <label data-i18n="dateStart">Дата початку</label>
+                        <input type="date" id="absenceStartInput">
+                        <label data-i18n="dateEnd">Дата завершення</label>
+                        <input type="date" id="absenceEndInput">
+                        <label data-i18n="comment">Коментар</label>
+                        <textarea id="absenceCommentInput" rows="3"></textarea>
+                        <button type="button" id="createAbsenceBtn" class="primary-btn" data-i18n="save">Зберегти</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 data-i18n="myAbsences">Мої відсутності</h3>
+                                <p data-i18n="myAbsencesSubtitle">Записи відпусток, лікарняних та інших відсутностей.</p>
+                            </div>
+                            <button type="button" id="loadAbsencesBtn" class="secondary-btn" data-i18n="refresh">Оновити</button>
+                        </div>
+                        <div id="absencesList" class="list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="schedulePage" class="page">
+                <div class="grid two">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 data-i18n="mySchedule">Мій графік</h3>
+                                <p data-i18n="myScheduleSubtitle">Персональний або загальний робочий графік.</p>
+                            </div>
+                            <button type="button" id="loadScheduleBtn" class="secondary-btn" data-i18n="refresh">Оновити</button>
+                        </div>
+                        <div id="scheduleDetails" class="details-box"></div>
+                    </div>
+
+                    <div class="card admin-only hidden">
+                        <h3 data-i18n="createSchedule">Створити графік</h3>
+                        <label data-i18n="userIdOptional">ID користувача або порожньо для загального</label>
+                        <input id="scheduleUserIdInput" type="number" min="1" placeholder="">
+                        <label data-i18n="startWorkTime">Початок роботи</label>
+                        <input id="scheduleStartInput" type="time" value="09:00">
+                        <label data-i18n="endWorkTime">Кінець роботи</label>
+                        <input id="scheduleEndInput" type="time" value="18:00">
+                        <label data-i18n="breakMinutes">Перерва, хв</label>
+                        <input id="scheduleBreakInput" type="number" value="60" min="0">
+                        <label data-i18n="workingDaysMask">Робочі дні</label>
+                        <input id="scheduleMaskInput" type="text" value="1111100">
+                        <button type="button" id="createScheduleBtn" class="primary-btn" data-i18n="save">Зберегти</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="adminPage" class="page">
+                <div class="tabs">
+                    <button type="button" class="tab-btn active" data-admin-tab="adminOverview" data-i18n="adminOverview">Огляд</button>
+                    <button type="button" class="tab-btn" data-admin-tab="adminUsers" data-i18n="adminUsers">Користувачі</button>
+                    <button type="button" class="tab-btn" data-admin-tab="adminReports" data-i18n="adminReports">Звіти</button>
+                    <button type="button" class="tab-btn" data-admin-tab="adminAudit" data-i18n="adminAudit">Аудит</button>
+                </div>
+
+                <div id="adminOverview" class="admin-tab active-admin-tab">
+                    <div class="grid three">
+                        <div class="card metric-card"><span data-i18n="activeUsers">Активні користувачі</span><b id="activeUsers">0</b></div>
+                        <div class="card metric-card"><span data-i18n="blockedUsers">Заблоковані користувачі</span><b id="blockedUsers">0</b></div>
+                        <div class="card metric-card"><span data-i18n="totalUsers">Усього користувачів</span><b id="totalUsers">0</b></div>
+                        <div class="card metric-card"><span data-i18n="totalTimeEntries">Записи часу</span><b id="totalTimeEntries">0</b></div>
+                        <div class="card metric-card"><span data-i18n="totalAbsences">Записи відсутностей</span><b id="totalAbsences">0</b></div>
+                    </div>
+                </div>
+
+                <div id="adminUsers" class="admin-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div><h3 data-i18n="usersManagement">Керування користувачами</h3><p data-i18n="usersManagementSubtitle">Блокування, розблокування та зміна ролей.</p></div>
+                            <button type="button" id="loadUsersBtn" class="secondary-btn" data-i18n="refresh">Оновити</button>
+                        </div>
+                        <div class="table-wrap"><table><thead><tr><th>ID</th><th data-i18n="name">Ім’я</th><th data-i18n="loginLabel">Логін</th><th>Email</th><th data-i18n="role">Роль</th><th data-i18n="status">Статус</th><th data-i18n="actions">Дії</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+                    </div>
+                </div>
+
+                <div id="adminReports" class="admin-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div><h3 data-i18n="systemReports">Звіти системи</h3><p data-i18n="systemReportsSubtitle">Зведення за користувачами та періодом.</p></div>
+                            <button type="button" id="loadAdminReportBtn" class="secondary-btn" data-i18n="refresh">Оновити</button>
+                        </div>
+                        <div class="filters">
+                            <input type="date" id="reportFromInput">
+                            <input type="date" id="reportToInput">
+                            <select id="reportUserInput"><option value="" data-i18n="allUsers">Усі користувачі</option></select>
+                        </div>
+                        <div id="adminReportBox" class="details-box"></div>
+                    </div>
+                </div>
+
+                <div id="adminAudit" class="admin-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div><h3 data-i18n="auditLog">Журнал аудиту</h3><p data-i18n="auditLogSubtitle">Дії користувачів і зміни сутностей.</p></div>
+                            <button type="button" id="loadAuditBtn" class="secondary-btn" data-i18n="refresh">Оновити</button>
+                        </div>
+                        <div id="auditList" class="list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="backupPage" class="page">
+                <div class="grid two">
+                    <div class="card">
+                        <h3 data-i18n="exportData">Експорт даних</h3>
+                        <p class="muted" data-i18n="exportDescription">Формування JSON-файлу з даними поточної web-сесії.</p>
+                        <button type="button" id="exportBtn" class="primary-btn" data-i18n="exportBtn">Експортувати JSON</button>
+                    </div>
+                    <div class="card">
+                        <h3 data-i18n="importData">Імпорт даних</h3>
+                        <p class="muted" data-i18n="importDescription">Завантаження JSON-файлу для відновлення даних.</p>
+                        <input id="importFile" type="file" accept=".json">
+                        <button type="button" id="importBtn" class="secondary-btn" data-i18n="importBtn">Імпортувати</button>
+                    </div>
+                    <div class="card wide">
+                        <h3 data-i18n="backupPreview">Попередній перегляд backup</h3>
+                        <pre id="backupPreview">{}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="profilePage" class="page">
+                <div class="card profile-card">
+                    <div class="avatar">WT</div>
+                    <h3 id="profileName">User</h3>
+                    <p id="profileLogin">login</p>
+                    <div class="profile-grid">
+                        <div><span data-i18n="role">Роль</span><b id="profileRole">Employee</b></div>
+                        <div><span data-i18n="accountStatus">Статус акаунта</span><b id="profileStatus">Active</b></div>
+                        <div><span data-i18n="backend">Backend</span><b>Node.js + Express</b></div>
+                        <div><span>Database</span><b>SQLite</b></div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
