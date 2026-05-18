@@ -73,3 +73,32 @@ Thumbs.db
 # Logs
 # =========================
 *.log
+
+# =========================
+# Docker / Docker Compose
+# =========================
+.docker/
+docker-data/
+volumes/
+
+# Docker temporary files
+*.tar
+
+
+# =========================
+# Python / Locust
+# =========================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+
+# =========================
+# Test results / screenshots drafts
+# =========================
+results/*.csv
+results/*.html
+results/*.log
