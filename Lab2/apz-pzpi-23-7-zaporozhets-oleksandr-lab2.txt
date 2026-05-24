@@ -1,0 +1,1314 @@
+﻿Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+Кафедра програмної інженерії
+
+
+
+Звіт
+з лабораторної роботи №2
+з дисципліни «Архітектура програмного забезпечення»
+
+
+
+
+
+
+Виконав:                                                                                             Перевірив:
+ст. гр. ПЗПІ 23-7                                                                        Дашенков Д. С.
+Запорожець Олександр                                   
+Олександрович                           
+                                                                       
+
+
+
+
+
+
+
+
+
+Харків 2026
+     1 Мета роботи
+     Метою лабораторної роботи є розробка мобільного програмного застосунку для системи WorkTime Monitor, який є окремим клієнтським компонентом програмної системи моніторингу та обліку робочого часу співробітників. Застосунок повинен забезпечувати взаємодію користувача із серверною частиною системи через REST API, підтримувати сценарії авторизації, фіксації початку та завершення робочого дня, роботи з перервами, перегляду історії відміток, статистики та профілю користувача.
+     Особливістю даної лабораторної роботи є те, що вона виконується як продовження проєкту, реалізованого у попередньому семестрі з дисципліни «Аналіз та рефакторинг коду». Серверна частина, REST API, JWT-авторизація, Swagger-документація та базова бізнес-логіка обліку робочого часу були створені раніше. У межах поточної роботи до цієї системи додається мобільний Android-клієнт.
+     2 Короткий опис системи
+     WorkTime Monitor — це програмна система для моніторингу та обліку робочого часу співробітників. Вона призначена для невеликих компаній, відділів або організацій, де потрібно фіксувати початок і завершення робочого дня, перерви, відсутності, запізнення, понаднормову роботу та формувати звіти для адміністратора, керівника або HR-відділу.
+     Система має клієнт-серверну архітектуру. У попередній версії було реалізовано backend на Node.js та Express.js, REST API, JWT-авторизацію, Swagger/OpenAPI-документацію та базу даних SQLite. У межах нового курсу архітектура розвивається далі: додається мобільний застосунок, передбачається Web-клієнт, подальша міграція бази даних на PostgreSQL, масштабування серверної частини та інтеграція з IoT-компонентами.
+     3 Використання backend з попереднього семестру
+     У даній лабораторній роботі backend не створювався з нуля, оскільки він був реалізований у попередньому семестрі з дисципліни «Аналіз та рефакторинг коду». У старій версії проєкту серверна частина вже містила основні контролери, middleware для JWT-авторизації, функції адміністрування, бізнес-логіку обліку часу, роботу з відсутностями, графіками, звітами та журналом аудиту.
+     Мобільний застосунок розроблено як новий клієнт до цієї серверної частини. Він не підключається безпосередньо до бази даних, а взаємодіє із сервером через HTTP-запити у форматі JSON. Для локальної роботи в Android-емуляторі використовується адреса http://10.0.2.2:3000/api/, яка дозволяє звертатися з емулятора до backend, запущеного на комп’ютері за адресою http://localhost:3000.
+     У попередній реалізації backend використовував SQLite. Для поточного курсу в архітектурі вказується подальший перехід на PostgreSQL, оскільки наступні лабораторні роботи передбачають Web-клієнт, масштабування backend та роботу з більшим обсягом даних. Для мобільного застосунку тип СУБД не є критичним, оскільки він працює тільки через REST API.
+     4 Опис мобільного застосунку
+     Мобільний застосунок WorkTime Monitor реалізовано для платформи Android мовою Kotlin з використанням Jetpack Compose. Застосунок призначений передусім для співробітника, який щодня фіксує робочі події: початок робочого дня, початок перерви, завершення перерви та завершення робочого дня.
+     У застосунку реалізовано такі основні екрани:
+• екран входу до системи, який виконує авторизацію користувача через endpoint POST /api/auth/login;
+• головний екран для фіксації подій робочого часу;
+• екран історії відміток, де відображаються дії користувача;
+• екран статистики, який показує короткі показники робочого часу;
+• екран профілю користувача з даними про роль, посаду, відділ та графік роботи.
+     Таким чином, мобільний застосунок покриває базові потреби співробітника та доповнює наявну серверну частину системи, реалізовану у попередньому семестрі.
+5 Прийняті інженерні рішення
+РішенняОбрана технологіяОбґрунтуванняПлатформаAndroidПоширена мобільна платформа, зручна для демонстрації у середовищі Android Studio.Мова програмуванняKotlinСучасна рекомендована мова для Android-розробки.UI-фреймворкJetpack ComposeДозволяє швидко створювати декларативний інтерфейс без XML-розмітки.API-взаємодіяRetrofit + OkHttpЗабезпечує HTTP-запити до backend та обмін JSON-даними.АвторизаціяJWTПісля входу сервер повертає токен, який використовується для захищених запитів.BackendNode.js + ExpressВикористано серверну частину, розроблену у попередньому семестрі.База данихSQLite / PostgreSQLSQLite використовувалась у попередній версії; PostgreSQL запланована для оновленої архітектури.
+     Для структурування Android-застосунку використано розділення на пакети: model для моделей даних, api для роботи з backend та MainActivity.kt для основного UI-шару. Такий підхід спрощує підтримку коду та дозволяє надалі замінювати або розширювати API-шар без повного переписування інтерфейсу.
+6 Структура мобільного застосунку
+     У мобільному застосунку створено таку логічну структуру:
+com.example.worktimemonitor
+├── MainActivity.kt
+├── api
+│   ├── ApiService.kt
+│   ├── BackendApi.kt
+│   └── RetrofitClient.kt
+└── model
+    ├── ApiMessageResponse.kt
+    ├── LoginRequest.kt
+    ├── LoginResponse.kt
+    ├── TimeRecord.kt
+    ├── User.kt
+    └── WorkStatus.kt
+     Файл RetrofitClient.kt містить базову URL-адресу backend та налаштування HTTP-клієнта. Файл BackendApi.kt описує REST endpoint-и, які використовує мобільний застосунок. Файл ApiService.kt є проміжним шаром між UI та API: він викликає backend-запити та перетворює отримані дані у моделі, зручні для відображення в інтерфейсі.
+     7 Взаємодія мобільного застосунку з backend
+     Після запуску backend у локальному середовищі він доступний за адресою http://localhost:3000. Для Android-емулятора використовується спеціальна адреса http://10.0.2.2:3000/api/, оскільки localhost всередині емулятора означає сам емулятор, а не мій комп’ютер.
+     Загальна схема взаємодії має такий вигляд:
+Android Mobile App → Retrofit/HTTP/JSON/JWT → Node.js + Express Backend → Database
+     Мобільний застосунок надсилає запити до backend, backend перевіряє JWT-токен, застосовує бізнес-логіку та зберігає або повертає дані. Такий підхід відповідає клієнт-серверній архітектурі системи та дозволяє не дублювати бізнес-логіку на стороні Android-клієнта.
+МетодEndpointПризначенняPOST/api/auth/loginАвторизація користувача та отримання JWT-токена.GET/api/auth/meОтримання даних поточного користувача.POST/api/time-entries/start-workФіксація початку робочого дня.POST/api/time-entries/end-workФіксація завершення робочого дня.POST/api/time-entries/break-startФіксація початку перерви.POST/api/time-entries/break-endФіксація завершення перерви.GET/api/time-entries/myОтримання власної історії часових відміток.GET/api/schedules/myОтримання робочого графіка користувача.
+     8 UML Use Case Diagram
+     UML-діаграма прецедентів показує основні сценарії роботи співробітника з мобільним застосунком. Співробітник може авторизуватися, фіксувати робочі події, переглядати історію, статистику та профіль. Для частини сценаріїв мобільний застосунок звертається до backend API, реалізованого у попередньому семестрі.
+
+Рисунок 1 – UML Use Case Diagram мобільного застосунку WorkTime Monitor
+     9 UML Component Diagram
+     Діаграма компонентів відображає будову мобільного застосунку та його зв’язок із серверною частиною. Android-застосунок складається з UI-шару, моделей даних і API-шару. Через Retrofit API-шар надсилає HTTP-запити до backend Node.js/Express. На стороні backend працюють middleware авторизації, бізнес-логіка та база даних.
+
+Рисунок 2 – UML Component Diagram системи з мобільним клієнтом
+     10 UML Activity Diagram
+     Діаграма діяльності деталізує сценарій авторизації та фіксації події робочого часу. Після успішного входу користувач переходить на головний екран, натискає відповідну кнопку, після чого мобільний застосунок надсилає HTTP-запит до backend. Сервер перевіряє токен, застосовує бізнес-правила та зберігає подію у базі даних.
+
+Рисунок 3 – UML Activity Diagram сценарію фіксації робочого часу
+     11 ER Model мобільної платформи та backend
+     ER-модель показує основні сутності, з якими працює мобільний застосунок через backend API. Центральною сутністю є Users. З нею пов’язані часові відмітки TimeEntries, робочі графіки WorkSchedules, записи відсутності AbsenceRecords та журнал аудиту AuditLogs. Мобільний застосунок напряму не працює з цими таблицями, однак отримує та змінює відповідні дані через REST API.
+
+Рисунок 4 – ER Model даних системи WorkTime Monitor
+     12 Перевірка роботи мобільного застосунку
+     Для перевірки роботи було запущено backend з попереднього семестру локально через команду npm start. Сервер виводить повідомлення про запуск API на http://localhost:3000 та підключення до бази даних SQLite. Після цього Android-застосунок запускається на емуляторі Pixel і звертається до backend за адресою http://10.0.2.2:3000/api/.
+     Під час демонстрації необхідно зробити такі скріншоти та вставити їх у цей розділ:
+• запущений backend у PowerShell з повідомленням про запуск сервера;
+• Swagger-документація backend у браузері;
+• екран входу мобільного застосунку;
+• головний екран після авторизації;
+• натискання кнопки “Почати робочий день”;
+• екран історії відміток;
+• екран статистики;
+• екран профілю користувача.
+     Місце для скріншотів:
+   
+   Рисунок 5 – Екран авторизації мобільного застосунку
+   
+   Рисунок 6 – Головний екран фіксації робочого часу
+   
+   Рисунок 7 – Екран історії часових відміток
+   
+   Рисунок 8 – Екран статистики
+   
+   Рисунок 9 – Екран профілю користувача
+     13 Висновок
+     У ході виконання лабораторної роботи №2 було розроблено мобільний Android-застосунок WorkTime Monitor мовою Kotlin з використанням Jetpack Compose. Застосунок реалізує основні сценарії співробітника: авторизацію, фіксацію початку та завершення робочого дня, початок і завершення перерви, перегляд історії, статистики та профілю користувача.
+     У роботі використано backend, реалізований у попередньому семестрі з дисципліни «Аналіз та рефакторинг коду». Мобільний застосунок взаємодіє із серверною частиною через REST API, використовуючи Retrofit, JSON та JWT-авторизацію. Це дозволяє розглядати застосунок не як окремий демонстраційний проєкт, а як новий клієнтський компонент уже існуючої програмної системи.
+     Також у звіті побудовано UML Use Case Diagram, UML Component Diagram, UML Activity Diagram та ER Model, що відображають функціональність мобільного клієнта, його внутрішню будову, взаємодію з backend і модель даних системи.
+
+
+     Додаток А
+     AppService:
+package com.example.worktimemonitor.api
+
+import com.example.worktimemonitor.model.LoginRequest
+import com.example.worktimemonitor.model.TimeRecord
+import com.example.worktimemonitor.model.User
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+class ApiService {
+
+    private var jwtToken: String? = null
+
+    private val localRecords = mutableListOf<TimeRecord>()
+
+    suspend fun login(email: String, password: String): User {
+        val response = RetrofitClient.api.login(
+            LoginRequest(
+                login = email,
+                password = password
+            )
+        )
+
+        jwtToken = response.token
+
+        return User(
+            id = response.user.id,
+            fullName = response.user.fullName,
+            email = email,
+            role = response.user.role,
+            position = "Співробітник",
+            department = "Відділ розробки",
+            workSchedule = "09:00 — 18:00"
+        )
+    }
+
+    fun getToken(): String {
+        return "Bearer ${jwtToken ?: ""}"
+    }
+
+    suspend fun startWork(): TimeRecord {
+        RetrofitClient.api.startWork(getToken())
+
+        val record = TimeRecord(
+            id = localRecords.size + 1,
+            action = "Початок роботи",
+            time = getCurrentTime(),
+            description = "Запит виконано через POST /api/time-entries/start-work"
+        )
+
+        localRecords.add(record)
+        return record
+    }
+
+    suspend fun endWork(): TimeRecord {
+        RetrofitClient.api.endWork(getToken())
+
+        val record = TimeRecord(
+            id = localRecords.size + 1,
+            action = "Завершення роботи",
+            time = getCurrentTime(),
+            description = "Запит виконано через POST /api/time-entries/end-work"
+        )
+
+        localRecords.add(record)
+        return record
+    }
+
+    suspend fun startBreak(): TimeRecord {
+        RetrofitClient.api.startBreak(getToken())
+
+        val record = TimeRecord(
+            id = localRecords.size + 1,
+            action = "Початок перерви",
+            time = getCurrentTime(),
+            description = "Запит виконано через POST /api/time-entries/break-start"
+        )
+
+        localRecords.add(record)
+        return record
+    }
+
+    suspend fun endBreak(): TimeRecord {
+        RetrofitClient.api.endBreak(getToken())
+
+        val record = TimeRecord(
+            id = localRecords.size + 1,
+            action = "Завершення перерви",
+            time = getCurrentTime(),
+            description = "Запит виконано через POST /api/time-entries/break-end"
+        )
+
+        localRecords.add(record)
+        return record
+    }
+
+    fun getMyTimeEntries(): List<TimeRecord> {
+        return localRecords
+    }
+
+    private fun getCurrentTime(): String {
+        val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+        return formatter.format(Date())
+    }
+}
+     
+     BackendApi:
+package com.example.worktimemonitor.api
+
+import com.example.worktimemonitor.model.ApiMessageResponse
+import com.example.worktimemonitor.model.LoginRequest
+import com.example.worktimemonitor.model.LoginResponse
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.POST
+
+interface BackendApi {
+
+    @POST("auth/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): LoginResponse
+
+    @GET("auth/me")
+    suspend fun getMe(
+        @Header("Authorization") token: String
+    ): Any
+
+    @POST("time-entries/start-work")
+    suspend fun startWork(
+        @Header("Authorization") token: String
+    ): ApiMessageResponse
+
+    @POST("time-entries/end-work")
+    suspend fun endWork(
+        @Header("Authorization") token: String
+    ): ApiMessageResponse
+
+    @POST("time-entries/break-start")
+    suspend fun startBreak(
+        @Header("Authorization") token: String
+    ): ApiMessageResponse
+
+    @POST("time-entries/break-end")
+    suspend fun endBreak(
+        @Header("Authorization") token: String
+    ): ApiMessageResponse
+
+    @GET("time-entries/my")
+    suspend fun getMyTimeEntries(
+        @Header("Authorization") token: String
+    ): Any
+
+    @GET("schedules/my")
+    suspend fun getMySchedule(
+        @Header("Authorization") token: String
+    ): Any
+}
+     RetrofitClient:
+package com.example.worktimemonitor.api
+
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
+object RetrofitClient {
+
+    private const val BASE_URL = "http://10.0.2.2:3000/api/"
+
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .build()
+
+    val api: BackendApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(BackendApi::class.java)
+    }
+}
+     ApiMessageResponse:
+package com.example.worktimemonitor.api
+
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
+object RetrofitClient {
+
+    private const val BASE_URL = "http://10.0.2.2:3000/api/"
+
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .build()
+
+    val api: BackendApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(BackendApi::class.java)
+    }
+}
+     LoginRequest:
+package com.example.worktimemonitor.model
+
+data class LoginRequest(
+    val login: String,
+    val password: String
+)
+     
+     LoginResponse.kt:
+package com.example.worktimemonitor.model
+
+data class LoginResponse(
+    val token: String,
+    val user: BackendUser
+)
+
+data class BackendUser(
+    val id: Int,
+    val fullName: String,
+    val role: String
+)
+     TimeRecord:
+package com.example.worktimemonitor.model
+
+data class LoginResponse(
+    val token: String,
+    val user: BackendUser
+)
+
+data class BackendUser(
+    val id: Int,
+    val fullName: String,
+    val role: String
+)
+     User:
+package com.example.worktimemonitor.model
+
+data class LoginResponse(
+    val token: String,
+    val user: BackendUser
+)
+
+data class BackendUser(
+    val id: Int,
+    val fullName: String,
+    val role: String
+)
+     WorkStatus:
+package com.example.worktimemonitor.model
+
+data class LoginResponse(
+    val token: String,
+    val user: BackendUser
+)
+
+data class BackendUser(
+    val id: Int,
+    val fullName: String,
+    val role: String
+)
+     MainActivity:
+package com.example.worktimemonitor
+
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.worktimemonitor.api.ApiService
+import com.example.worktimemonitor.model.TimeRecord
+import com.example.worktimemonitor.model.User
+import com.example.worktimemonitor.model.WorkStatus
+import kotlinx.coroutines.launch
+
+enum class Screen {
+    Login,
+    Home,
+    History,
+    Statistics,
+    Profile
+}
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        setContent {
+            WorkTimeMonitorApp()
+        }
+    }
+}
+
+@Composable
+fun WorkTimeMonitorApp() {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val apiService = remember { ApiService() }
+
+    var currentScreen by remember { mutableStateOf(Screen.Login) }
+    var isLoggedIn by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    var currentUser by remember {
+        mutableStateOf<User?>(null)
+    }
+
+    var workStatus by remember {
+        mutableStateOf(WorkStatus.NOT_STARTED)
+    }
+
+    var isWorkStarted by remember { mutableStateOf(false) }
+    var isBreakStarted by remember { mutableStateOf(false) }
+
+    val records = remember {
+        mutableStateListOf<TimeRecord>()
+    }
+
+    WorkTimeTheme {
+        if (!isLoggedIn) {
+            LoginScreen(
+                isLoading = isLoading,
+                onLogin = { email, password ->
+                    coroutineScope.launch {
+                        try {
+                            isLoading = true
+
+                            val user = apiService.login(email, password)
+
+                            currentUser = user
+                            records.clear()
+                            records.addAll(apiService.getMyTimeEntries())
+
+                            isLoggedIn = true
+                            currentScreen = Screen.Home
+
+                            Toast.makeText(
+                                context,
+                                "Авторизація успішна",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Помилка входу: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                }
+            )
+        } else {
+            MainScreen(
+                currentScreen = currentScreen,
+                onScreenChange = { currentScreen = it },
+                currentUser = currentUser ?: User(
+                    id = 0,
+                    fullName = "Невідомий користувач",
+                    email = "unknown@nure.ua",
+                    role = "Employee",
+                    position = "Співробітник",
+                    department = "Відділ розробки",
+                    workSchedule = "09:00 — 18:00"
+                ),
+                workStatus = workStatus,
+                isWorkStarted = isWorkStarted,
+                isBreakStarted = isBreakStarted,
+                isLoading = isLoading,
+                records = records,
+                onStartWork = {
+                    coroutineScope.launch {
+                        try {
+                            isLoading = true
+
+                            val record = apiService.startWork()
+
+                            records.add(record)
+                            isWorkStarted = true
+                            isBreakStarted = false
+                            workStatus = WorkStatus.WORKING
+
+                            Toast.makeText(
+                                context,
+                                "Робочий день розпочато",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Помилка запиту: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                onStartBreak = {
+                    coroutineScope.launch {
+                        try {
+                            isLoading = true
+
+                            val record = apiService.startBreak()
+
+                            records.add(record)
+                            isBreakStarted = true
+                            workStatus = WorkStatus.BREAK
+
+                            Toast.makeText(
+                                context,
+                                "Перерву розпочато",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Помилка запиту: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                onEndBreak = {
+                    coroutineScope.launch {
+                        try {
+                            isLoading = true
+
+                            val record = apiService.endBreak()
+
+                            records.add(record)
+                            isBreakStarted = false
+                            workStatus = WorkStatus.WORKING
+
+                            Toast.makeText(
+                                context,
+                                "Перерву завершено",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Помилка запиту: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                onEndWork = {
+                    coroutineScope.launch {
+                        try {
+                            isLoading = true
+
+                            val record = apiService.endWork()
+
+                            records.add(record)
+                            isWorkStarted = false
+                            isBreakStarted = false
+                            workStatus = WorkStatus.FINISHED
+
+                            Toast.makeText(
+                                context,
+                                "Робочий день завершено",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Помилка запиту: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                onLogout = {
+                    isLoggedIn = false
+                    currentUser = null
+                    currentScreen = Screen.Login
+                    workStatus = WorkStatus.NOT_STARTED
+                    isWorkStarted = false
+                    isBreakStarted = false
+                    records.clear()
+                }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen(
+    currentScreen: Screen,
+    onScreenChange: (Screen) -> Unit,
+    currentUser: User,
+    workStatus: WorkStatus,
+    isWorkStarted: Boolean,
+    isBreakStarted: Boolean,
+    isLoading: Boolean,
+    records: List<TimeRecord>,
+    onStartWork: () -> Unit,
+    onStartBreak: () -> Unit,
+    onEndBreak: () -> Unit,
+    onEndWork: () -> Unit,
+    onLogout: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "WorkTime Monitor",
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            text = "Мобільний клієнт системи обліку часу",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.85f)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF1E3A8A),
+                    titleContentColor = Color.White
+                )
+            )
+        },
+        bottomBar = {
+            NavigationBar(containerColor = Color.White) {
+                NavigationBarItem(
+                    selected = currentScreen == Screen.Home,
+                    onClick = { onScreenChange(Screen.Home) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                    label = { Text("Головна") }
+                )
+
+                NavigationBarItem(
+                    selected = currentScreen == Screen.History,
+                    onClick = { onScreenChange(Screen.History) },
+                    icon = { Icon(Icons.Default.History, contentDescription = null) },
+                    label = { Text("Історія") }
+                )
+
+                NavigationBarItem(
+                    selected = currentScreen == Screen.Statistics,
+                    onClick = { onScreenChange(Screen.Statistics) },
+                    icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
+                    label = { Text("Статистика") }
+                )
+
+                NavigationBarItem(
+                    selected = currentScreen == Screen.Profile,
+                    onClick = { onScreenChange(Screen.Profile) },
+                    icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+                    label = { Text("Профіль") }
+                )
+            }
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF3F6FB))
+                .padding(paddingValues)
+        ) {
+            when (currentScreen) {
+                Screen.Home -> HomeScreen(
+                    user = currentUser,
+                    workStatus = workStatus,
+                    isWorkStarted = isWorkStarted,
+                    isBreakStarted = isBreakStarted,
+                    isLoading = isLoading,
+                    onStartWork = onStartWork,
+                    onStartBreak = onStartBreak,
+                    onEndBreak = onEndBreak,
+                    onEndWork = onEndWork
+                )
+
+                Screen.History -> HistoryScreen(records = records)
+
+                Screen.Statistics -> StatisticsScreen(records = records)
+
+                Screen.Profile -> ProfileScreen(
+                    user = currentUser,
+                    onLogout = onLogout
+                )
+
+                Screen.Login -> {}
+            }
+        }
+    }
+}
+
+@Composable
+fun LoginScreen(
+    isLoading: Boolean,
+    onLogin: (String, String) -> Unit
+) {
+    var email by remember { mutableStateOf("employee@nure.ua") }
+    var password by remember { mutableStateOf("123456") }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF1E3A8A),
+                        Color(0xFF2563EB),
+                        Color(0xFFF3F6FB)
+                    )
+                )
+            )
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Work,
+                    contentDescription = null,
+                    tint = Color(0xFF1E3A8A),
+                    modifier = Modifier.height(64.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "WorkTime Monitor",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E3A8A)
+                )
+
+                Text(
+                    text = "Система моніторингу робочого часу",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email або логін") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = !isLoading
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Пароль") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    enabled = !isLoading
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        onLogin(email, password)
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2563EB)
+                    )
+                ) {
+                    Icon(Icons.Default.Login, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (isLoading) "Вхід..." else "Увійти")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Запит: POST /api/auth/login",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeScreen(
+    user: User,
+    workStatus: WorkStatus,
+    isWorkStarted: Boolean,
+    isBreakStarted: Boolean,
+    isLoading: Boolean,
+    onStartWork: () -> Unit,
+    onStartBreak: () -> Unit,
+    onEndBreak: () -> Unit,
+    onEndWork: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(18.dp)
+    ) {
+        Text(
+            text = "Головна",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
+
+        Text(
+            text = "Вітаємо, ${user.fullName}",
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        InfoCard(
+            title = "Поточний статус",
+            value = workStatus.title,
+            description = "Дані передаються до Node.js/Express backend через REST API"
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp)
+            ) {
+                Text(
+                    text = "Дії співробітника",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Button(
+                    onClick = onStartWork,
+                    enabled = !isWorkStarted && !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A))
+                ) {
+                    Icon(Icons.Default.AccessTime, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Почати робочий день")
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = onStartBreak,
+                    enabled = isWorkStarted && !isBreakStarted && !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B))
+                ) {
+                    Text("Почати перерву")
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = onEndBreak,
+                    enabled = isWorkStarted && isBreakStarted && !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
+                ) {
+                    Text("Завершити перерву")
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = onEndWork,
+                    enabled = isWorkStarted && !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("Завершити робочий день")
+                }
+
+                if (isLoading) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Виконується запит до backend...",
+                        color = Color.Gray,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        InfoCard(
+            title = "API-взаємодія",
+            value = "REST + JWT",
+            description = "Android-застосунок звертається до http://10.0.2.2:3000/api/"
+        )
+    }
+}
+
+@Composable
+fun HistoryScreen(records: List<TimeRecord>) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(18.dp)
+    ) {
+        Text(
+            text = "Історія відміток",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
+
+        Text(
+            text = "Журнал дій співробітника у мобільному застосунку",
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        if (records.isEmpty()) {
+            Text(
+                text = "Історія відміток поки порожня",
+                color = Color.Gray
+            )
+        } else {
+            records.reversed().forEach { record ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = Color(0xFF2563EB)
+                        )
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column {
+                            Text(
+                                text = record.action,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+
+                            Text(
+                                text = record.description,
+                                color = Color.Gray,
+                                fontSize = 13.sp
+                            )
+
+                            Text(
+                                text = "Час: ${record.time}",
+                                color = Color(0xFF1E3A8A),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StatisticsScreen(records: List<TimeRecord>) {
+    val startCount = records.count { it.action == "Початок роботи" }
+    val endCount = records.count { it.action == "Завершення роботи" }
+    val breakCount = records.count { it.action == "Початок перерви" }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(18.dp)
+    ) {
+        Text(
+            text = "Статистика",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
+
+        Text(
+            text = "Короткі показники робочого часу",
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        InfoCard(
+            title = "Відпрацьовано сьогодні",
+            value = "7 год 45 хв",
+            description = "У повній версії розрахунок виконується на backend"
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        InfoCard(
+            title = "Відпрацьовано за тиждень",
+            value = "38 год 20 хв",
+            description = "Дані формуються на основі записів у базі даних"
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        InfoCard(
+            title = "Кількість початків роботи",
+            value = startCount.toString(),
+            description = "POST /api/time-entries/start-work"
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        InfoCard(
+            title = "Кількість завершень роботи",
+            value = endCount.toString(),
+            description = "POST /api/time-entries/end-work"
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        InfoCard(
+            title = "Кількість перерв",
+            value = breakCount.toString(),
+            description = "POST /api/time-entries/break-start"
+        )
+    }
+}
+
+@Composable
+fun ProfileScreen(
+    user: User,
+    onLogout: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Icon(
+            imageVector = Icons.Default.AccountCircle,
+            contentDescription = null,
+            tint = Color(0xFF2563EB),
+            modifier = Modifier.height(92.dp)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = user.fullName,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = user.email,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        InfoCard(
+            title = "Роль",
+            value = user.role,
+            description = "Роль користувача у системі"
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        InfoCard(
+            title = "Посада",
+            value = user.position,
+            description = "Посада співробітника"
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        InfoCard(
+            title = "Відділ",
+            value = user.department,
+            description = "Підрозділ, до якого належить співробітник"
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        InfoCard(
+            title = "Робочий графік",
+            value = user.workSchedule,
+            description = "У повній версії отримується через GET /api/schedules/my"
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+        ) {
+            Icon(Icons.Default.Logout, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Вийти з акаунта")
+        }
+    }
+}
+
+@Composable
+fun InfoCard(
+    title: String,
+    value: String,
+    description: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp)
+        ) {
+            Text(
+                text = title,
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = value,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1E3A8A)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = description,
+                color = Color.Gray,
+                fontSize = 13.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun WorkTimeTheme(content: @Composable () -> Unit) {
+    val colorScheme = lightColorScheme(
+        primary = Color(0xFF2563EB),
+        secondary = Color(0xFF1E3A8A),
+        background = Color(0xFFF3F6FB),
+        surface = Color.White
+    )
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        content = content
+    )
+}
+     
+
+
+     ДОДАТОК Б
+Посилання на відео: https://youtu.be/yNRGwatMlP8
+Посилання на гітхаб: https://github.com/NureZaporozhetsOleksandr/apz-pzpi-23-7-zaporozhets-oleksandr/tree/main/Lab2
+     
+     
+     
+			Page 7
+
+
